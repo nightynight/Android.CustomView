@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <attr name="myTitleText" format="string" />
+    <attr name="myTitleTextColor" format="color" />
+    <attr name="myTitleTextSize" format="dimension" />
+
+    <declare-styleable name="CustomTitleView">
+        <attr name="myTitleText" />
+        <attr name="myTitleTextColor" />
+        <attr name="myTitleTextSize" />
+    </declare-styleable>
+
+</resources>
