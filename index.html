@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Android.customview by nightynight</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Android.customview</h1>
+      <h2 class="project-tagline"></h2>
+      <a href="https://github.com/nightynight/Android.CustomView" class="btn">View on GitHub</a>
+      <a href="https://github.com/nightynight/Android.CustomView/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/nightynight/Android.CustomView/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h4>
+<a id="自定义view的步骤" class="anchor" href="#%E8%87%AA%E5%AE%9A%E4%B9%89view%E7%9A%84%E6%AD%A5%E9%AA%A4" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>自定义View的步骤：</h4>
+
+<p>1、自定义View的属性
+2、在View的构造方法中获得我们自定义的属性
+[ 3、重写onMesure ]
+4、重写onDraw</p>
+
+<h4>
+<a id="下面分别介绍每一步骤" class="anchor" href="#%E4%B8%8B%E9%9D%A2%E5%88%86%E5%88%AB%E4%BB%8B%E7%BB%8D%E6%AF%8F%E4%B8%80%E6%AD%A5%E9%AA%A4" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>下面分别介绍每一步骤</h4>
+
+<h4>
+<a id="1自定义view的属性首先在resvalues--下建立一个attrsxml--在里面定义我们的属性和声明我们的整个样式" class="anchor" href="#1%E8%87%AA%E5%AE%9A%E4%B9%89view%E7%9A%84%E5%B1%9E%E6%80%A7%E9%A6%96%E5%85%88%E5%9C%A8resvalues--%E4%B8%8B%E5%BB%BA%E7%AB%8B%E4%B8%80%E4%B8%AAattrsxml--%E5%9C%A8%E9%87%8C%E9%9D%A2%E5%AE%9A%E4%B9%89%E6%88%91%E4%BB%AC%E7%9A%84%E5%B1%9E%E6%80%A7%E5%92%8C%E5%A3%B0%E6%98%8E%E6%88%91%E4%BB%AC%E7%9A%84%E6%95%B4%E4%B8%AA%E6%A0%B7%E5%BC%8F" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>1、自定义View的属性，首先在res/values/  下建立一个attrs.xml ， 在里面定义我们的属性和声明我们的整个样式。</h4>
+
+<pre><code>&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;resources&gt;
+    &lt;attr name="myTitleText" format="string" /&gt;
+    &lt;attr name="myTitleTextColor" format="color" /&gt;
+    &lt;attr name="myTitleTextSize" format="dimension" /&gt;
+    &lt;declare-styleable name="CustomTitleView"&gt;
+        &lt;attr name="myTitleText" /&gt;
+        &lt;attr name="myTitleTextColor" /&gt;
+        &lt;attr name="myTitleTextSize" /&gt;
+    &lt;/declare-styleable&gt;
+&lt;/resources&gt;
+</code></pre>
+
+<p>我们定义了字体，字体颜色，字体大小3个属性，format是值该属性的取值类型:
+一共有：string,color,demension,integer,enum,reference,float,boolean,fraction,flag;不清楚的可以google一把。
+然后在布局中声明我们的自定义View</p>
+
+<pre><code>&lt;RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:custom="http://schemas.android.com/apk/res-auto"&gt;
+    &lt;com.brokepal.customviewdemo.view.CustomTitleView
+        android:id="@+id/myView"
+        android:layout_width="200dp"
+        android:layout_height="100dp"
+        custom:myTitleText="3712"
+        custom:myTitleTextColor="#ff0000"
+        custom:myTitleTextSize="40sp" /&gt;
+&lt;/RelativeLayout&gt;
+</code></pre>
+
+<h4>
+<a id="2在view的构造方法中获得我们的自定义的样式" class="anchor" href="#2%E5%9C%A8view%E7%9A%84%E6%9E%84%E9%80%A0%E6%96%B9%E6%B3%95%E4%B8%AD%E8%8E%B7%E5%BE%97%E6%88%91%E4%BB%AC%E7%9A%84%E8%87%AA%E5%AE%9A%E4%B9%89%E7%9A%84%E6%A0%B7%E5%BC%8F" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>2、在View的构造方法中，获得我们的自定义的样式</h4>
+
+<pre><code>public class CustomTitleView extends View {
+    private String mTitleText;
+    private int mTitleTextColor;
+    private int mTitleTextSize;
+    /**
+     * 绘制时控制文本绘制的范围
+     */
+    private Rect mBound;
+    private Paint mPaint;
+    public CustomTitleView(Context context, AttributeSet attrs)
+    {
+        this(context, attrs, 0);
+    }
+    public CustomTitleView(Context context)
+    {
+        this(context, null);
+    }
+    /**
+     * 构造函数，获取属性列表，设置监听器
+     *
+     * @param context
+     * @param attrs
+     * @param defStyle
+     */
+    public CustomTitleView(Context context, AttributeSet attrs, int defStyle)
+    {
+        super(context, attrs, defStyle);
+        /**
+         * 获得我们所定义的自定义样式属性
+         */
+        TypedArray a = context.getTheme().obtainStyledAttributes(attrs, R.styleable.CustomTitleView, defStyle, 0);
+        int n = a.getIndexCount();
+        for (int i = 0; i &lt; n; i++)
+        {
+            int attr = a.getIndex(i);
+            switch (attr)
+            {
+                case R.styleable.CustomTitleView_myTitleText:
+                    mTitleText = a.getString(attr);
+                    break;
+                case R.styleable.CustomTitleView_myTitleTextColor:
+                    // 默认颜色设置为黑色
+                    mTitleTextColor = a.getColor(attr, Color.BLACK);
+                    break;
+                case R.styleable.CustomTitleView_myTitleTextSize:
+                    // 默认设置为16sp，TypeValue也可以把sp转化为px
+                    mTitleTextSize = a.getDimensionPixelSize(attr, (int) TypedValue.applyDimension(
+                            TypedValue.COMPLEX_UNIT_SP, 16, getResources().getDisplayMetrics()));
+                    break;
+            }
+        }
+        /**
+         * 获得绘制文本的宽和高
+         */
+        mPaint = new Paint();
+        mPaint.setTextSize(mTitleTextSize);
+        mBound = new Rect();
+        mPaint.getTextBounds(mTitleText, 0, mTitleText.length(), mBound);
+    }
+}
+</code></pre>
+
+<h4>
+<a id="3重写onmesureondraw方法" class="anchor" href="#3%E9%87%8D%E5%86%99onmesureondraw%E6%96%B9%E6%B3%95" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>3、重写onMesure、onDraw方法</h4>
+
+<pre><code>@Override
+protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec)
+{
+    super.onMeasure(widthMeasureSpec, heightMeasureSpec);  
+}
+@Override
+protected void onDraw(Canvas canvas)
+{
+    mPaint.setColor(Color.YELLOW);
+    canvas.drawRect(0, 0, getMeasuredWidth(), getMeasuredHeight(), mPaint);
+    mPaint.setColor(mTitleTextColor);
+    canvas.drawText(mTitleText, getWidth() / 2 - mBound.width() / 2, getHeight() / 2 + mBound.height() / 2, mPaint);
+}
+</code></pre>
+
+<p>此时的效果是：</p>
+
+<p>但是此时如果我们把布局文件的宽和高写成wrap_content，会发现效果并不是我们的预期：</p>
+
+<p>系统帮我们测量的高度和宽度都是MATCH_PARNET，当我们设置明确的宽度和高度时，系统帮我们测量的结果就是我们设置的结果，当我们设置为WRAP_CONTENT,或者MATCH_PARENT系统帮我们测量的结果就是MATCH_PARENT的长度。所以，当设置了WRAP_CONTENT时，我们需要自己进行测量，即重写onMesure方法”。</p>
+
+<h4>
+<a id="重写之前先了解measurespec的specmode一共三种类型" class="anchor" href="#%E9%87%8D%E5%86%99%E4%B9%8B%E5%89%8D%E5%85%88%E4%BA%86%E8%A7%A3measurespec%E7%9A%84specmode%E4%B8%80%E5%85%B1%E4%B8%89%E7%A7%8D%E7%B1%BB%E5%9E%8B" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>重写之前先了解MeasureSpec的specMode,一共三种类型：</h4>
+
+<p>EXACTLY：一般是设置了明确的值或者是MATCH_PARENT
+AT_MOST：表示子布局限制在一个最大值内，一般为WARP_CONTENT
+UNSPECIFIED：表示子布局想要多大就多大，很少使用
+下面是我们重写onMeasure代码：</p>
+
+<pre><code>@Override
+protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec)
+{
+    int widthMode = MeasureSpec.getMode(widthMeasureSpec);
+    int widthSize = MeasureSpec.getSize(widthMeasureSpec);
+    int heightMode = MeasureSpec.getMode(heightMeasureSpec);
+    int heightSize = MeasureSpec.getSize(heightMeasureSpec);
+    int width;
+    int height ;
+    /*
+    MeasureSpec的specMode,一共三种类型：
+        EXACTLY：一般是设置了明确的值或者是MATCH_PARENT
+        AT_MOST：表示子布局限制在一个最大值内，一般为WARP_CONTENT
+        UNSPECIFIED：表示子布局想要多大就多大，很少使用
+    */
+    if (widthMode == MeasureSpec.EXACTLY)
+    {
+        width = widthSize;
+    } else
+    {
+        mPaint.setTextSize(mTitleTextSize);
+        mPaint.getTextBounds(mTitleText, 0, mTitleText.length(), mBound);
+        float textWidth = mBound.width();
+        int desired = (int) (getPaddingLeft() + textWidth + getPaddingRight());
+        width = desired;
+    }
+    if (heightMode == MeasureSpec.EXACTLY)
+    {
+        height = heightSize;
+    } else
+    {
+        mPaint.setTextSize(mTitleTextSize);
+        mPaint.getTextBounds(mTitleText, 0, mTitleText.length(), mBound);
+        float textHeight = mBound.height();
+        int desired = (int) (getPaddingTop() + textHeight + getPaddingBottom());
+        height = desired;
+    }
+    //设置控件的宽高
+    setMeasuredDimension(width, height);
+}
+</code></pre>
+
+<p>现在我们修改下布局文件：</p>
+
+<pre><code>&lt;com.brokepal.customviewdemo.view.CustomTitleView
+    android:id="@+id/myView"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:padding="10dp"
+    android:layout_centerInParent="true"
+    custom:myTitleText="3712"
+    custom:myTitleTextColor="#ff0000"
+    custom:myTitleTextSize="40sp" /&gt;
+</code></pre>
+
+<p>现在的效果是：</p>
+
+<p>现在我们可以对高度、宽度进行随便的设置了，基本可以满足我们的需求。
+接下来，给我们的控件添加一个监听器，让我们的控件实现点击后产生随机数的功能。
+在构造函数中添加：</p>
+
+<pre><code>//设置监听器
+this.setOnClickListener(new OnClickListener() {
+    @Override
+    public void onClick(View v)
+    {
+        mTitleText = randomText();
+        postInvalidate();   //刷新页面，会再次执行onMeasure方法和onDraw方法
+    }
+});
+</code></pre>
+
+<p>下面为randomText函数：</p>
+
+<pre><code>//获取随机字符串
+private String randomText()
+{
+    Random random = new Random();
+    Set&lt;Integer&gt; set = new HashSet&lt;Integer&gt;();
+    while (set.size() &lt; 4)
+    {
+        int randomInt = random.nextInt(10);
+        set.add(randomInt);
+    }
+    StringBuffer sb = new StringBuffer();
+    for (Integer i : set)
+    {
+        sb.append("" + i);
+    }
+    return sb.toString();
+}
+</code></pre>
+
+<p>接下来为控件的属性设置get、set方法，使之可以在activity中修改样式。</p>
+
+<pre><code>//给mTitleText设置set方法，一般会设置所有属性的get、set方法，这里就不多设置了
+public void setmTitleText(String text){
+    mTitleText=text;
+    invalidate();   //mTitleText改变之后要重新绘制控件
+}
+</code></pre>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/nightynight/Android.CustomView">Android.customview</a> is maintained by <a href="https://github.com/nightynight">nightynight</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
